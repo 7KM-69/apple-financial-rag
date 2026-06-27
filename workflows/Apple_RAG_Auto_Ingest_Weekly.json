@@ -1,0 +1,443 @@
+﻿{
+    "updatedAt":  "2026-06-26T22:33:29.889Z",
+    "createdAt":  "2026-06-26T21:42:38.428Z",
+    "id":  "vt0HSGuCGMKLb1oi",
+    "name":  "Apple RAG - Auto Ingest Weekly",
+    "description":  null,
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "weeks",
+                                                                           "triggerAtDay":  [
+                                                                                                1
+                                                                                            ],
+                                                                           "triggerAtHour":  6
+                                                                       }
+                                                                   ]
+                                                  }
+                                     },
+                      "id":  "schedule-001",
+                      "name":  "Weekly Schedule",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       240,
+                                       304
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "fileSearch"
+                                     },
+                      "id":  "gdrive-list-002",
+                      "name":  "List Drive Files",
+                      "type":  "n8n-nodes-base.googleDrive",
+                      "typeVersion":  3,
+                      "position":  [
+                                       464,
+                                       304
+                                   ],
+                      "credentials":  {
+                                          "googleDriveOAuth2Api":  {
+                                                                       "id":  "c3asHHkV4Cpm87Nr",
+                                                                       "name":  "Google Drive account"
+                                                                   }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const cutoffMs = Date.now() - 8 * 24 * 60 * 60 * 1000;\nconst newFiles = $input.all().filter(item =\u003e {\n  const t = item.json.modifiedTime || item.json.createdTime;\n  return t \u0026\u0026 new Date(t).getTime() \u003e= cutoffMs;\n});\nreturn newFiles.length \u003e 0 ? newFiles : [{ json: { _skip: true } }];"
+                                     },
+                      "id":  "filter-new-003",
+                      "name":  "Filter New Files",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       688,
+                                       304
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "c1",
+                                                                                   "leftValue":  "={{ $json._skip }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "notEquals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "check-004",
+                      "name":  "Has New Files?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       912,
+                                       304
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "loop-005",
+                      "name":  "Loop Over Files",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       1120,
+                                       208
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "download",
+                                         "fileId":  {
+                                                        "mode":  "id",
+                                                        "__rl":  true,
+                                                        "value":  "={{ $json.id }}"
+                                                    },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "download-006",
+                      "name":  "Download PDF",
+                      "type":  "n8n-nodes-base.googleDrive",
+                      "typeVersion":  3,
+                      "position":  [
+                                       1344,
+                                       208
+                                   ],
+                      "credentials":  {
+                                          "googleDriveOAuth2Api":  {
+                                                                       "id":  "c3asHHkV4Cpm87Nr",
+                                                                       "name":  "Google Drive account"
+                                                                   }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "insert",
+                                         "pineconeIndex":  {
+                                                               "mode":  "id",
+                                                               "__rl":  true,
+                                                               "value":  "apple-rag",
+                                                               "cachedResultName":  "apple-rag"
+                                                           },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "pinecone-007",
+                      "name":  "Pinecone Insert",
+                      "type":  "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1536,
+                                       -16
+                                   ],
+                      "credentials":  {
+                                          "pineconeApi":  {
+                                                              "id":  "FLRQ3tOF25qPe0iz",
+                                                              "name":  "PineconeApi account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "dataType":  "binary",
+                                         "options":  {
+                                                         "metadata":  {
+                                                                          "metadataValues":  [
+                                                                                                 {
+                                                                                                     "name":  "source",
+                                                                                                     "value":  "={{ $json.name }}"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "ingested_at",
+                                                                                                     "value":  "={{ new Date().toISOString() }}"
+                                                                                                 }
+                                                                                             ]
+                                                                      }
+                                                     }
+                                     },
+                      "id":  "loader-008",
+                      "name":  "Document Loader",
+                      "type":  "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1680,
+                                       496
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "chunkSize":  500,
+                                         "chunkOverlap":  50,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "splitter-009",
+                      "name":  "Text Splitter",
+                      "type":  "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1632,
+                                       784
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+                                                         "dimensions":  1024
+                                                     }
+                                     },
+                      "id":  "embeddings-010",
+                      "name":  "Embeddings OpenAI",
+                      "type":  "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1792,
+                                       208
+                                   ],
+                      "credentials":  {
+                                          "openAiApi":  {
+                                                            "id":  "2YuL8wspIFqhWuLo",
+                                                            "name":  "OpenAi account"
+                                                        }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Weekly Schedule":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "List Drive Files",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "List Drive Files":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Filter New Files",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Filter New Files":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Has New Files?",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Has New Files?":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Loop Over Files",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ],
+                                                            [
+
+                                                            ]
+                                                        ]
+                                           },
+                        "Loop Over Files":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Download PDF",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ],
+                                                             [
+
+                                                             ]
+                                                         ]
+                                            },
+                        "Download PDF":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Pinecone Insert",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         },
+                        "Pinecone Insert":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Loop Over Files",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Document Loader":  {
+                                                "ai_document":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Pinecone Insert",
+                                                                            "type":  "ai_document",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                            },
+                        "Text Splitter":  {
+                                              "ai_textSplitter":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Document Loader",
+                                                                              "type":  "ai_textSplitter",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                          },
+                        "Embeddings OpenAI":  {
+                                                  "ai_embedding":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Pinecone Insert",
+                                                                               "type":  "ai_embedding",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                              }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "callerPolicy":  "workflowsFromSameOwner",
+                     "availableInMCP":  false
+                 },
+    "staticData":  {
+                       "node:Weekly Schedule":  {
+                                                    "recurrenceRules":  [
+
+                                                                        ]
+                                                }
+                   },
+    "meta":  null,
+    "pinData":  {
+
+                },
+    "versionId":  "338babe3-67ef-44e8-a2e3-f3d380c56b4a",
+    "activeVersionId":  null,
+    "versionCounter":  7,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-06-26T21:42:38.433Z",
+                       "createdAt":  "2026-06-26T21:42:38.433Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "vt0HSGuCGMKLb1oi",
+                       "projectId":  "vgWbsl2MdkQbRChI",
+                       "project":  {
+                                       "updatedAt":  "2025-07-30T10:32:30.513Z",
+                                       "createdAt":  "2025-07-30T10:31:06.832Z",
+                                       "id":  "vgWbsl2MdkQbRChI",
+                                       "name":  "Ahmad Madi \u003cahmadmadi2006@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "52ed6aa6-02c4-46c6-84ea-a576ba743fbb",
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-07-30T10:31:06.832Z",
+                                                                    "createdAt":  "2025-07-30T10:31:06.832Z",
+                                                                    "userId":  "52ed6aa6-02c4-46c6-84ea-a576ba743fbb",
+                                                                    "projectId":  "vgWbsl2MdkQbRChI",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2026-06-27T09:55:37.000Z",
+                                                                                 "createdAt":  "2025-07-30T10:31:05.356Z",
+                                                                                 "id":  "52ed6aa6-02c4-46c6-84ea-a576ba743fbb",
+                                                                                 "email":  "ahmadmadi2006@gmail.com",
+                                                                                 "firstName":  "Ahmad",
+                                                                                 "lastName":  "Madi",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-07-30T10:33:47.848Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.104.1",
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "automationGoalSm":  [
+                                                                                                                                         "other",
+                                                                                                                                         "customer-communication",
+                                                                                                                                         "lead-generation"
+                                                                                                                                     ],
+                                                                                                                "role":  "sales-and-marketing",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "firstSuccessfulWorkflowId":  "noMYLVul0yFM6IYo",
+                                                                                                  "userActivatedAt":  1765086645140,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1767005235639
+                                                                                                                },
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "aiAgentStarterCallout":  true
+                                                                                                                        }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2026-06-27",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  null
+}

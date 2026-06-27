@@ -1,0 +1,13 @@
+# PDF files (large — share via Google Drive instead)
+apple date/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# Old duplicate workflow file
+Apple_RAG_Auto_Ingestion_Workflow.json
